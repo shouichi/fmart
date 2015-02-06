@@ -22,9 +22,9 @@ var (
 	// ErrInvalidParams is returned when params are invalid.
 	ErrInvalidParams = errors.New("fmart: invalid params")
 	// ErrUnauthorizedRequest is returned when request contains invalid id or password.
-	ErrUnauthorizedRequest = errors.New("fmart: invalid params")
+	ErrUnauthorizedRequest = errors.New("fmart: unauthorized request")
 	// ErrInvalidRequest is returned when request contains invalid data.
-	ErrInvalidRequest = errors.New("fmart: invalid params")
+	ErrInvalidRequest = errors.New("fmart: invalid request")
 )
 
 var (
