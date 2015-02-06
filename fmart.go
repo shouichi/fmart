@@ -33,6 +33,11 @@ var (
 )
 
 var (
+	idValidations = []validateFunc{
+		validateMinLength(1),
+		validateMaxLength(18),
+	}
+
 	nameValidations = []validateFunc{
 		validateMinLength(1),
 		validateMaxLength(40),
@@ -102,6 +107,51 @@ func (p *IssueInvoiceParams) Params() url.Values {
 	}
 }
 
+// ModifyInvoiceParams represents params for ModifyInvoice and provides validations.
+type ModifyInvoiceParams struct {
+	ID           string
+	Name         string
+	NameKatakana string
+	PhoneNumber  string
+	Amount       int
+	Expiry       time.Time
+}
+
+// IsValid returns true iff all values are valid.
+func (p *ModifyInvoiceParams) IsValid() bool {
+	return len(p.Errors()) == 0
+}
+
+// Errors returns map of errors where key is the invalid field and value is
+// array of error messages.
+func (p *ModifyInvoiceParams) Errors() map[string][]string {
+	errs := make(map[string][]string)
+
+	applyValidations(errs, "id", p.ID, idValidations)
+	applyValidations(errs, "name", p.Name, nameValidations)
+	applyValidations(errs, "name_katakana", p.NameKatakana, nameKatakanaValidations)
+	applyValidations(errs, "phone_number", p.PhoneNumber, phoneNumberValidations)
+	applyValidations(errs, "amount", p.Amount, amountValidations)
+	applyValidations(errs, "expiry", p.Expiry, expiryValidations)
+
+	return errs
+}
+
+// Params returns url.Values representation of ModifyInvoiceParams.
+func (p *ModifyInvoiceParams) Params() url.Values {
+	return url.Values{
+		"login_user_id":  {UserID},
+		"login_password": {UserPassword},
+		"regist_type":    {"2"},
+		"receipt_no":     {p.ID},
+		"name":           {p.Name},
+		"kana":           {p.NameKatakana},
+		"phone_no":       {p.PhoneNumber},
+		"payment":        {strconv.Itoa(p.Amount)},
+		"date_of_expiry": {formatTime(p.Expiry)},
+	}
+}
+
 // IssueInvoice issues a new invoice. Returns invoice identifier when success.
 func IssueInvoice(p *IssueInvoiceParams) (string, error) {
 	if !p.IsValid() {
@@ -112,10 +162,12 @@ func IssueInvoice(p *IssueInvoiceParams) (string, error) {
 }
 
 // ModifyInvoice takes ID of existing invoice and modifies it.
-func ModifyInvoice(ID string) error {
-	v := url.Values{}
+func ModifyInvoice(p *ModifyInvoiceParams) error {
+	if !p.IsValid() {
+		return ErrInvalidParams
+	}
 
-	_, err := request(v)
+	_, err := request(p.Params())
 	return err
 }
 
