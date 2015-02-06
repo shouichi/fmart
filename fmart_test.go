@@ -52,6 +52,17 @@ func TestIssueInvoice(t *testing.T) {
 	}
 }
 
+func ExampleIssueInvoice() {
+	p := &IssueInvoiceParams{}
+	if !p.IsValid() {
+	}
+
+	id, err := IssueInvoice(p)
+	if err != nil {
+	}
+	fmt.Println(id)
+}
+
 func TestModifyInvoice(t *testing.T) {
 	var res string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -89,6 +100,16 @@ func TestModifyInvoice(t *testing.T) {
 	}
 }
 
+func ExampleModifyInvoice() {
+	p := &ModifyInvoiceParams{}
+	if !p.IsValid() {
+	}
+
+	err := ModifyInvoice(p)
+	if err != nil {
+	}
+}
+
 func TestCancelInvoice(t *testing.T) {
 	var res string
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -111,6 +132,12 @@ func TestCancelInvoice(t *testing.T) {
 	}
 }
 
+func ExampleCancelInvoice() {
+	err := CancelInvoice("invoice-123")
+	if err != nil {
+	}
+}
+
 func TestAckInvoiceStatuses(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b, _ := ioutil.ReadAll(r.Body)
@@ -128,6 +155,12 @@ func TestAckInvoiceStatuses(t *testing.T) {
 	err := AckInvoiceStatuses([]string{"1", "2", "3"})
 	if err != nil {
 		t.Errorf("expected nil error, got: %v", err)
+	}
+}
+
+func ExampleAckInvoiceStatuses() {
+	err := AckInvoiceStatuses([]string{"invoice-1", "invlice-2"})
+	if err != nil {
 	}
 }
 
@@ -189,4 +222,23 @@ func TestParseInvoiceStatuses(t *testing.T) {
 		"receipt_date_0002": {"201502082010"},
 		"payment_0002":      {"103"},
 	})
+}
+
+func ExampleParseInvoiceStatuses() {
+	statuses, err := ParseInvoiceStatuses(&http.Request{})
+	if err != nil {
+	}
+
+	for _, s := range statuses {
+		switch s.Status {
+		case StatusDepositMade:
+			// do something
+		case StatusDepositCanceled:
+			// do another thing
+		case StatusDepositFinalized:
+			// do yet another thing
+		default:
+			// not reached
+		}
+	}
 }
