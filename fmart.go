@@ -263,15 +263,18 @@ func parseInvoiceStatusAt(r *http.Request, i int) (*InvoiceStatus, error) {
 	switch r.FormValue(fmt.Sprintf("status_%04d", i)) {
 	case "1":
 		status = StatusDepositMade
+		break
 	case "2":
 		status = StatusDepositCanceled
+		break
 	case "3":
 		status = StatusDepositFinalized
+		break
 	default:
 		return nil, ErrInvalidRequest
 	}
 
-	updatedAt, err := time.Parse("200601020304", r.FormValue(fmt.Sprintf("receipt_date_%04d", i)))
+	updatedAt, err := time.Parse("200601021504", r.FormValue(fmt.Sprintf("receipt_date_%04d", i)))
 	if err != nil {
 		return nil, ErrInvalidRequest
 	}
