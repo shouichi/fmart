@@ -188,6 +188,21 @@ func CancelInvoice(ID string) error {
 	return err
 }
 
+// AckInvoiceStatuses takes array of invoice IDs and sends acknowledgement request.
+func AckInvoiceStatuses(IDs []string) error {
+	r := strings.NewReader(strings.Join(IDs, "\r\n"))
+	res, err := http.Post(APIEndpoint, "text/plain", r)
+	if err != nil {
+		return err
+	}
+
+	if res.StatusCode != 200 {
+		return errors.New("fmart: server returned non 200")
+	}
+
+	return nil
+}
+
 const (
 	// StatusDepositMade represents the situation where customer deposited but still be able to cancel.
 	StatusDepositMade = 1
