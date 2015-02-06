@@ -56,7 +56,7 @@ var (
 
 	amountValidations = []validateFunc{
 		validateMin(1),
-		validateMax(1),
+		validateMax(999999),
 	}
 
 	expiryValidations = []validateFunc{
