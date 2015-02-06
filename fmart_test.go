@@ -14,7 +14,7 @@ func TestIssueInvoice(t *testing.T) {
 	}))
 	defer ts.Close()
 
-	apiEndpoint = ts.URL
+	APIEndpoint = ts.URL
 
 	res = "invoice-1234"
 	p := &IssueInvoiceParams{}

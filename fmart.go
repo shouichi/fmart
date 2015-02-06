@@ -23,9 +23,9 @@ var (
 )
 
 var (
-	apiEndpoint  = "https://"
-	userID       = ""
-	userPassword = ""
+	APIEndpoint  = "https://"
+	UserID       = ""
+	UserPassword = ""
 )
 
 // IssueInvoiceParams represents params for IssueInvoice and provides validations.
@@ -50,8 +50,8 @@ func IssueInvoice(p *IssueInvoiceParams) (string, error) {
 
 	t := p.Expiry
 	v := url.Values{
-		"login_user_id":  {userID},
-		"login_password": {userPassword},
+		"login_user_id":  {UserID},
+		"login_password": {UserPassword},
 		"regist_type":    {"1"},
 		"name":           {p.Name},
 		"kana":           {p.NameKatakana},
@@ -89,7 +89,7 @@ func GetInvoiceStatus(ID string) error {
 
 func request(p url.Values) (string, error) {
 	e := encodeShiftJIS(strings.NewReader(p.Encode()))
-	res, err := http.Post(apiEndpoint, "application/x-www-form-urlencoded", e)
+	res, err := http.Post(APIEndpoint, "application/x-www-form-urlencoded", e)
 	if err != nil {
 		return "", fmt.Errorf("fmart: %v", err)
 	}
