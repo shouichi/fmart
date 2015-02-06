@@ -140,7 +140,12 @@ func ModifyInvoice(ID string) error {
 
 // CancelInvoice takes ID of existing invoice and cancels it.
 func CancelInvoice(ID string) error {
-	v := url.Values{}
+	v := url.Values{
+		"login_user_id":  {UserID},
+		"login_password": {UserPassword},
+		"regist_type":    {"9"},
+		"receipt_no":     {ID},
+	}
 
 	_, err := request(v)
 	return err
