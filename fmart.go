@@ -42,14 +42,9 @@ func (p *IssueInvoiceParams) IsValid() bool {
 	return true
 }
 
-// IssueInvoice issues a new invoice. Returns invoice identifier when success.
-func IssueInvoice(p *IssueInvoiceParams) (string, error) {
-	if !p.IsValid() {
-		return "", ErrInvalidParams
-	}
-
-	t := p.Expiry
-	v := url.Values{
+// Params returns url.Values representation of IssueInvoiceParams.
+func (p *IssueInvoiceParams) Params() url.Values {
+	return url.Values{
 		"login_user_id":  {UserID},
 		"login_password": {UserPassword},
 		"regist_type":    {"1"},
@@ -57,10 +52,17 @@ func IssueInvoice(p *IssueInvoiceParams) (string, error) {
 		"kana":           {p.NameKatakana},
 		"phone_no":       {p.PhoneNumber},
 		"payment":        {strconv.Itoa(p.Amount)},
-		"date_of_expiry": {fmt.Sprintf("%04d%02d%02d", t.Year(), t.Month(), t.Day())},
+		"date_of_expiry": {formatTime(p.Expiry)},
+	}
+}
+
+// IssueInvoice issues a new invoice. Returns invoice identifier when success.
+func IssueInvoice(p *IssueInvoiceParams) (string, error) {
+	if !p.IsValid() {
+		return "", ErrInvalidParams
 	}
 
-	return request(v)
+	return request(p.Params())
 }
 
 // ModifyInvoice takes ID of existing invoice and modifies it.
@@ -116,4 +118,8 @@ func encodeShiftJIS(r io.Reader) io.Reader {
 
 func decodeShiftJIS(r io.Reader) io.Reader {
 	return transform.NewReader(r, japanese.ShiftJIS.NewDecoder())
+}
+
+func formatTime(t time.Time) string {
+	return fmt.Sprintf("%04d%02d%02d", t.Year(), t.Month(), t.Day())
 }
