@@ -107,6 +107,15 @@ func (p *IssueInvoiceParams) Params() url.Values {
 	}
 }
 
+// IssueInvoice issues a new invoice. Returns invoice identifier when success.
+func IssueInvoice(p *IssueInvoiceParams) (string, error) {
+	if !p.IsValid() {
+		return "", ErrInvalidParams
+	}
+
+	return request(p.Params())
+}
+
 // ModifyInvoiceParams represents params for ModifyInvoice and provides validations.
 type ModifyInvoiceParams struct {
 	ID           string
@@ -150,15 +159,6 @@ func (p *ModifyInvoiceParams) Params() url.Values {
 		"payment":        {strconv.Itoa(p.Amount)},
 		"date_of_expiry": {formatTime(p.Expiry)},
 	}
-}
-
-// IssueInvoice issues a new invoice. Returns invoice identifier when success.
-func IssueInvoice(p *IssueInvoiceParams) (string, error) {
-	if !p.IsValid() {
-		return "", ErrInvalidParams
-	}
-
-	return request(p.Params())
 }
 
 // ModifyInvoice takes ID of existing invoice and modifies it.
