@@ -232,8 +232,8 @@ type validateFunc func(v interface{}) string
 
 func validateMin(n int) validateFunc {
 	return func(x interface{}) string {
-		if x.(int) < 1 {
-			return "must be greater than 0"
+		if x.(int) < n {
+			return fmt.Sprintf("must be greater than %d", n)
 		}
 		return ""
 	}
@@ -241,8 +241,8 @@ func validateMin(n int) validateFunc {
 
 func validateMax(n int) validateFunc {
 	return func(x interface{}) string {
-		if x.(int) > 999999 {
-			return "must be less than 999999"
+		if x.(int) > n {
+			return fmt.Sprintf("must be less than %d", n)
 		}
 		return ""
 	}
