@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -31,6 +32,8 @@ var (
 	UserPassword = ""
 )
 
+var phoneNumberRegexp = regexp.MustCompile(`\d{2,5}-\d{2,5}-\d{3,4}`)
+
 // IssueInvoiceParams represents params for IssueInvoice and provides validations.
 type IssueInvoiceParams struct {
 	Name         string
@@ -42,7 +45,66 @@ type IssueInvoiceParams struct {
 
 // IsValid returns true iff all values are valid.
 func (p *IssueInvoiceParams) IsValid() bool {
-	return true
+	return len(p.Errors()) == 0
+}
+
+// Errors returns map of errors where key is the invalid field and value is
+// array of error messages.
+func (p *IssueInvoiceParams) Errors() map[string][]string {
+	errs := make(map[string][]string)
+
+	applyValidations(errs, "name", p.Name, []validateFunc{
+		validateMinLength(1),
+		validateMaxLength(40),
+	})
+
+	applyValidations(errs, "name_katakana", p.NameKatakana, []validateFunc{
+		validateMinLength(1),
+		validateMaxLength(30),
+	})
+
+	applyValidations(errs, "phone_number", p.PhoneNumber, []validateFunc{
+		validateMinLength(1),
+		validateMaxLength(13),
+		func(p interface{}) string {
+			if !phoneNumberRegexp.MatchString(p.(string)) {
+				return "invalid format"
+			}
+			return ""
+		},
+	})
+
+	applyValidations(errs, "amount", p.Amount, []validateFunc{
+		func(x interface{}) string {
+			if x.(int) < 1 {
+				return "must be greater than 0"
+			}
+			return ""
+		},
+		func(x interface{}) string {
+			if x.(int) > 999999 {
+				return "must be less than 999999"
+			}
+			return ""
+		},
+	})
+
+	applyValidations(errs, "expiry", p.Expiry, []validateFunc{
+		func(t interface{}) string {
+			if t.(time.Time).Before(time.Now()) {
+				return "must be future"
+			}
+			return ""
+		},
+		func(t interface{}) string {
+			if t.(time.Time).After(time.Now().AddDate(0, 0, 60)) {
+				return "must be within 60 days"
+			}
+			return ""
+		},
+	})
+
+	return errs
 }
 
 // Params returns url.Values representation of IssueInvoiceParams.
@@ -125,4 +187,37 @@ func decodeShiftJIS(r io.Reader) io.Reader {
 
 func formatTime(t time.Time) string {
 	return fmt.Sprintf("%04d%02d%02d", t.Year(), t.Month(), t.Day())
+}
+
+// validateFunc takes a value and returns error message if any.
+type validateFunc func(v interface{}) string
+
+func validateMinLength(n int) validateFunc {
+	return func(v interface{}) string {
+		if len(v.(string)) < n {
+			return fmt.Sprintf("must be longer than %d", n)
+		}
+		return ""
+	}
+}
+
+func validateMaxLength(n int) validateFunc {
+	return func(v interface{}) string {
+		if len(v.(string)) > n {
+			return fmt.Sprintf("must be less than %d", n)
+		}
+		return ""
+	}
+}
+
+func applyValidations(m map[string][]string, k string, v interface{}, fns []validateFunc) {
+	for _, fn := range fns {
+		if msg := fn(v); msg != "" {
+			if _, ok := m[k]; ok {
+				m[k] = append(m[k], msg)
+			} else {
+				m[k] = []string{msg}
+			}
+		}
+	}
 }
