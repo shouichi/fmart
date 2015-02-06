@@ -23,8 +23,11 @@ var (
 )
 
 var (
-	APIEndpoint  = "https://"
-	UserID       = ""
+	// APIEndpoint is URL of FamilyMart Invoice API.
+	APIEndpoint = "https://"
+	// UserID is ID of the invoice issuer.
+	UserID = ""
+	// UserPassword is password of the invoice issuer.
 	UserPassword = ""
 )
 
