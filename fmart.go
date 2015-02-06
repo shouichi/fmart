@@ -32,7 +32,33 @@ var (
 	UserPassword = ""
 )
 
-var phoneNumberRegexp = regexp.MustCompile(`\d{2,5}-\d{2,5}-\d{3,4}`)
+var (
+	nameValidations = []validateFunc{
+		validateMinLength(1),
+		validateMaxLength(40),
+	}
+
+	nameKatakanaValidations = []validateFunc{
+		validateMinLength(1),
+		validateMaxLength(30),
+	}
+
+	phoneNumberValidations = []validateFunc{
+		validateMinLength(1),
+		validateMaxLength(13),
+		validateFormat(regexp.MustCompile(`\d{2,5}-\d{2,5}-\d{3,4}`)),
+	}
+
+	amountValidations = []validateFunc{
+		validateMin(1),
+		validateMax(1),
+	}
+
+	expiryValidations = []validateFunc{
+		validateMinTime(time.Now()),
+		validateMaxTime(time.Now().AddDate(0, 0, 60)),
+	}
+)
 
 // IssueInvoiceParams represents params for IssueInvoice and provides validations.
 type IssueInvoiceParams struct {
@@ -53,56 +79,11 @@ func (p *IssueInvoiceParams) IsValid() bool {
 func (p *IssueInvoiceParams) Errors() map[string][]string {
 	errs := make(map[string][]string)
 
-	applyValidations(errs, "name", p.Name, []validateFunc{
-		validateMinLength(1),
-		validateMaxLength(40),
-	})
-
-	applyValidations(errs, "name_katakana", p.NameKatakana, []validateFunc{
-		validateMinLength(1),
-		validateMaxLength(30),
-	})
-
-	applyValidations(errs, "phone_number", p.PhoneNumber, []validateFunc{
-		validateMinLength(1),
-		validateMaxLength(13),
-		func(p interface{}) string {
-			if !phoneNumberRegexp.MatchString(p.(string)) {
-				return "invalid format"
-			}
-			return ""
-		},
-	})
-
-	applyValidations(errs, "amount", p.Amount, []validateFunc{
-		func(x interface{}) string {
-			if x.(int) < 1 {
-				return "must be greater than 0"
-			}
-			return ""
-		},
-		func(x interface{}) string {
-			if x.(int) > 999999 {
-				return "must be less than 999999"
-			}
-			return ""
-		},
-	})
-
-	applyValidations(errs, "expiry", p.Expiry, []validateFunc{
-		func(t interface{}) string {
-			if t.(time.Time).Before(time.Now()) {
-				return "must be future"
-			}
-			return ""
-		},
-		func(t interface{}) string {
-			if t.(time.Time).After(time.Now().AddDate(0, 0, 60)) {
-				return "must be within 60 days"
-			}
-			return ""
-		},
-	})
+	applyValidations(errs, "name", p.Name, nameValidations)
+	applyValidations(errs, "name_katakana", p.NameKatakana, nameKatakanaValidations)
+	applyValidations(errs, "phone_number", p.PhoneNumber, phoneNumberValidations)
+	applyValidations(errs, "amount", p.Amount, amountValidations)
+	applyValidations(errs, "expiry", p.Expiry, expiryValidations)
 
 	return errs
 }
@@ -197,6 +178,24 @@ func formatTime(t time.Time) string {
 // validateFunc takes a value and returns error message if any.
 type validateFunc func(v interface{}) string
 
+func validateMin(n int) validateFunc {
+	return func(x interface{}) string {
+		if x.(int) < 1 {
+			return "must be greater than 0"
+		}
+		return ""
+	}
+}
+
+func validateMax(n int) validateFunc {
+	return func(x interface{}) string {
+		if x.(int) > 999999 {
+			return "must be less than 999999"
+		}
+		return ""
+	}
+}
+
 func validateMinLength(n int) validateFunc {
 	return func(v interface{}) string {
 		if len(v.(string)) < n {
@@ -210,6 +209,33 @@ func validateMaxLength(n int) validateFunc {
 	return func(v interface{}) string {
 		if len(v.(string)) > n {
 			return fmt.Sprintf("must be less than %d", n)
+		}
+		return ""
+	}
+}
+
+func validateFormat(r *regexp.Regexp) validateFunc {
+	return func(p interface{}) string {
+		if !r.MatchString(p.(string)) {
+			return "invalid format"
+		}
+		return ""
+	}
+}
+
+func validateMinTime(t time.Time) validateFunc {
+	return func(v interface{}) string {
+		if v.(time.Time).Before(t) {
+			return fmt.Sprintf("must be after %v", t)
+		}
+		return ""
+	}
+}
+
+func validateMaxTime(t time.Time) validateFunc {
+	return func(v interface{}) string {
+		if v.(time.Time).After(t) {
+			return fmt.Sprintf("must be before %v", t)
 		}
 		return ""
 	}
