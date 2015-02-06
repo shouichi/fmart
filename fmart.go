@@ -21,6 +21,10 @@ import (
 var (
 	// ErrInvalidParams is returned when params are invalid.
 	ErrInvalidParams = errors.New("fmart: invalid params")
+	// ErrUnauthorizedRequest is returned when request contains invalid id or password.
+	ErrUnauthorizedRequest = errors.New("fmart: invalid params")
+	// ErrInvalidRequest is returned when request contains invalid data.
+	ErrInvalidRequest = errors.New("fmart: invalid params")
 )
 
 var (
@@ -184,12 +188,85 @@ func CancelInvoice(ID string) error {
 	return err
 }
 
-// GetInvoiceStatus takes ID of existing invoice and returns its status.
-func GetInvoiceStatus(ID string) error {
-	v := url.Values{}
+const (
+	// StatusDepositMade represents the situation where customer deposited but still be able to cancel.
+	StatusDepositMade = 1
+	// StatusDepositCanceled represents the situation where customer deposited and canceled.
+	StatusDepositCanceled = 2
+	// StatusDepositFinalized represents the situation where customer deposited and can't cancel.
+	StatusDepositFinalized = 3
+)
 
-	_, err := request(v)
-	return err
+// InvoiceStatus represents invoice status.
+type InvoiceStatus struct {
+	ID        string
+	Amount    int
+	Status    int
+	UpdatedAt time.Time
+}
+
+// ParseInvoiceStatuses takes *http.Request, parses it and returns statuses of
+// existing invlices. It returns an error when one or more statuses contains
+// invalid data.
+func ParseInvoiceStatuses(r *http.Request) ([]*InvoiceStatus, error) {
+	if r.FormValue("login_user_id") != UserID ||
+		r.FormValue("login_password") != UserPassword {
+		return nil, ErrUnauthorizedRequest
+	}
+
+	n, err := strconv.Atoi(r.FormValue("number_of_notify"))
+	if err != nil {
+		return nil, ErrInvalidRequest
+	}
+
+	statuses := make([]*InvoiceStatus, n)
+
+	for i := 0; i < n; i++ {
+		s, err := parseInvoiceStatusAt(r, i)
+		if err != nil {
+			return nil, ErrInvalidRequest
+		}
+
+		statuses[i] = s
+	}
+
+	return statuses, nil
+}
+
+func parseInvoiceStatusAt(r *http.Request, i int) (*InvoiceStatus, error) {
+	id := r.FormValue(fmt.Sprintf("receipt_no_%04d", i))
+	if id == "" {
+		return nil, ErrInvalidRequest
+	}
+
+	amount, err := strconv.Atoi(r.FormValue(fmt.Sprintf("payment_%04d", i)))
+	if err != nil {
+		return nil, ErrInvalidRequest
+	}
+
+	var status int
+	switch r.FormValue(fmt.Sprintf("status_%04d", i)) {
+	case "1":
+		status = StatusDepositMade
+	case "2":
+		status = StatusDepositCanceled
+	case "3":
+		status = StatusDepositFinalized
+	default:
+		return nil, ErrInvalidRequest
+	}
+
+	updatedAt, err := time.Parse("200601020304", r.FormValue(fmt.Sprintf("receipt_date_%04d", i)))
+	if err != nil {
+		return nil, ErrInvalidRequest
+	}
+
+	return &InvoiceStatus{
+		ID:        id,
+		Amount:    amount,
+		Status:    status,
+		UpdatedAt: updatedAt,
+	}, nil
 }
 
 func request(p url.Values) (string, error) {
