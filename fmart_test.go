@@ -159,7 +159,7 @@ func TestAckInvoiceStatuses(t *testing.T) {
 }
 
 func ExampleAckInvoiceStatuses() {
-	err := AckInvoiceStatuses([]string{"invoice-1", "invlice-2"})
+	err := AckInvoiceStatuses([]string{"invoice-1", "invoice-2"})
 	if err != nil {
 	}
 }
