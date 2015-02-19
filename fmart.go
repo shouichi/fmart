@@ -37,35 +37,35 @@ var (
 )
 
 var (
-	idValidations = []validateFunc{
-		validateMinLength(1),
-		validateMaxLength(18),
+	idValidations = []validateFn{
+		validatesMinLength(1),
+		validatesMaxLength(18),
 	}
 
-	nameValidations = []validateFunc{
-		validateMinLength(1),
-		validateMaxLength(40),
+	nameValidations = []validateFn{
+		validatesMinLength(1),
+		validatesMaxLength(40),
 	}
 
-	nameKatakanaValidations = []validateFunc{
-		validateMinLength(1),
-		validateMaxLength(30),
+	nameKatakanaValidations = []validateFn{
+		validatesMinLength(1),
+		validatesMaxLength(30),
 	}
 
-	phoneNumberValidations = []validateFunc{
-		validateMinLength(1),
-		validateMaxLength(13),
-		validateFormat(regexp.MustCompile(`\d{2,5}-\d{2,5}-\d{3,4}`)),
+	phoneNumberValidations = []validateFn{
+		validatesMinLength(1),
+		validatesMaxLength(13),
+		validatesFormat(regexp.MustCompile(`\d{2,5}-\d{2,5}-\d{3,4}`)),
 	}
 
-	amountValidations = []validateFunc{
-		validateMin(1),
-		validateMax(999999),
+	amountValidations = []validateFn{
+		validatesMin(1),
+		validatesMax(999999),
 	}
 
-	expiryValidations = []validateFunc{
-		validateMinTime(time.Now()),
-		validateMaxTime(time.Now().AddDate(0, 0, 60)),
+	expiryValidations = []validateFn{
+		validatesMinTime(time.Now()),
+		validatesMaxTime(time.Now().AddDate(0, 0, 60)),
 	}
 )
 
@@ -188,9 +188,11 @@ func CancelInvoice(ID string) error {
 	return err
 }
 
+const IDDelimiter = "\r\n"
+
 // AckInvoiceStatuses takes array of invoice IDs and sends acknowledgement request.
 func AckInvoiceStatuses(IDs []string) error {
-	r := strings.NewReader(strings.Join(IDs, "\r\n"))
+	r := strings.NewReader(strings.Join(IDs, IDDelimiter))
 	res, err := http.Post(APIEndpoint, "text/plain", r)
 	if err != nil {
 		return err
@@ -323,9 +325,9 @@ func formatTime(t time.Time) string {
 }
 
 // validateFunc takes a value and returns error message if any.
-type validateFunc func(v interface{}) string
+type validateFn func(v interface{}) string
 
-func validateMin(n int) validateFunc {
+func validatesMin(n int) validateFn {
 	return func(x interface{}) string {
 		if x.(int) < n {
 			return fmt.Sprintf("must be greater than %d", n)
@@ -334,7 +336,7 @@ func validateMin(n int) validateFunc {
 	}
 }
 
-func validateMax(n int) validateFunc {
+func validatesMax(n int) validateFn {
 	return func(x interface{}) string {
 		if x.(int) > n {
 			return fmt.Sprintf("must be less than %d", n)
@@ -343,7 +345,7 @@ func validateMax(n int) validateFunc {
 	}
 }
 
-func validateMinLength(n int) validateFunc {
+func validatesMinLength(n int) validateFn {
 	return func(v interface{}) string {
 		if len(v.(string)) < n {
 			return fmt.Sprintf("must be longer than %d", n)
@@ -352,7 +354,7 @@ func validateMinLength(n int) validateFunc {
 	}
 }
 
-func validateMaxLength(n int) validateFunc {
+func validatesMaxLength(n int) validateFn {
 	return func(v interface{}) string {
 		if len(v.(string)) > n {
 			return fmt.Sprintf("must be less than %d", n)
@@ -361,7 +363,7 @@ func validateMaxLength(n int) validateFunc {
 	}
 }
 
-func validateFormat(r *regexp.Regexp) validateFunc {
+func validatesFormat(r *regexp.Regexp) validateFn {
 	return func(p interface{}) string {
 		if !r.MatchString(p.(string)) {
 			return "invalid format"
@@ -370,7 +372,7 @@ func validateFormat(r *regexp.Regexp) validateFunc {
 	}
 }
 
-func validateMinTime(t time.Time) validateFunc {
+func validatesMinTime(t time.Time) validateFn {
 	return func(v interface{}) string {
 		if v.(time.Time).Before(t) {
 			return fmt.Sprintf("must be after %v", t)
@@ -379,7 +381,7 @@ func validateMinTime(t time.Time) validateFunc {
 	}
 }
 
-func validateMaxTime(t time.Time) validateFunc {
+func validatesMaxTime(t time.Time) validateFn {
 	return func(v interface{}) string {
 		if v.(time.Time).After(t) {
 			return fmt.Sprintf("must be before %v", t)
@@ -388,7 +390,7 @@ func validateMaxTime(t time.Time) validateFunc {
 	}
 }
 
-func applyValidations(m map[string][]string, k string, v interface{}, fns []validateFunc) {
+func applyValidations(m map[string][]string, k string, v interface{}, fns []validateFn) {
 	for _, fn := range fns {
 		if msg := fn(v); msg != "" {
 			if _, ok := m[k]; ok {

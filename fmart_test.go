@@ -165,13 +165,19 @@ func ExampleAckInvoiceStatuses() {
 }
 
 func TestParseInvoiceStatuses(t *testing.T) {
-	var assertion func([]*InvoiceStatus, error)
+	validUserID := "tester"
+	validUserPassword := "secret"
+
+	UserID = validUserID
+	UserPassword = validUserPassword
+
+	var assertFn func([]*InvoiceStatus, error)
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		assertion(ParseInvoiceStatuses(r))
+		assertFn(ParseInvoiceStatuses(r))
 	}))
 	defer ts.Close()
 
-	assertion = func(statuses []*InvoiceStatus, err error) {
+	assertFn = func(statuses []*InvoiceStatus, err error) {
 		if err != ErrUnauthorizedRequest {
 			t.Errorf("expected ErrUnauthorizedRequest error, got nil")
 		}
@@ -181,14 +187,14 @@ func TestParseInvoiceStatuses(t *testing.T) {
 		"login_password": {"invalid_password"},
 	})
 
-	assertion = func(statuses []*InvoiceStatus, err error) {
+	assertFn = func(statuses []*InvoiceStatus, err error) {
 		if err != ErrInvalidRequest {
 			t.Errorf("expected ErrInvalidRequest error, got nil")
 		}
 	}
 	http.PostForm(ts.URL, url.Values{
-		"login_user_id":     {""},
-		"login_password":    {""},
+		"login_user_id":     {validUserID},
+		"login_password":    {validUserPassword},
 		"number_of_notify":  {"1"},
 		"receipt_no_0000":   {"1"},
 		"status_0000":       {"4"},
@@ -196,7 +202,7 @@ func TestParseInvoiceStatuses(t *testing.T) {
 		"payment_0000":      {"100"},
 	})
 
-	assertion = func(statuses []*InvoiceStatus, err error) {
+	assertFn = func(statuses []*InvoiceStatus, err error) {
 		if err != nil {
 			t.Errorf("expected nil error, got: %v", err)
 		}
@@ -206,8 +212,8 @@ func TestParseInvoiceStatuses(t *testing.T) {
 		}
 	}
 	http.PostForm(ts.URL, url.Values{
-		"login_user_id":     {""},
-		"login_password":    {""},
+		"login_user_id":     {validUserID},
+		"login_password":    {validUserPassword},
 		"number_of_notify":  {"3"},
 		"receipt_no_0000":   {"invlice-1"},
 		"status_0000":       {"1"},
