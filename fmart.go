@@ -64,8 +64,8 @@ var (
 	}
 
 	expiryValidations = []validateFn{
-		validatesMinTime(time.Now()),
-		validatesMaxTime(time.Now().AddDate(0, 0, 60)),
+		validatesMinTime(func() time.Time { return time.Now() }),
+		validatesMaxTime(func() time.Time { return time.Now().AddDate(0, 0, 60) }),
 	}
 )
 
@@ -372,8 +372,9 @@ func validatesFormat(r *regexp.Regexp) validateFn {
 	}
 }
 
-func validatesMinTime(t time.Time) validateFn {
+func validatesMinTime(fn func() time.Time) validateFn {
 	return func(v interface{}) string {
+		t := fn()
 		if v.(time.Time).Before(t) {
 			return fmt.Sprintf("must be after %v", t)
 		}
@@ -381,8 +382,9 @@ func validatesMinTime(t time.Time) validateFn {
 	}
 }
 
-func validatesMaxTime(t time.Time) validateFn {
+func validatesMaxTime(fn func() time.Time) validateFn {
 	return func(v interface{}) string {
+		t := fn()
 		if v.(time.Time).After(t) {
 			return fmt.Sprintf("must be before %v", t)
 		}
