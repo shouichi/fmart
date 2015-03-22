@@ -188,11 +188,11 @@ func CancelInvoice(ID string) error {
 	return err
 }
 
-const IDDelimiter = "\r\n"
+const idDelimiter = "\r\n"
 
 // AckInvoiceStatuses takes array of invoice IDs and sends acknowledgement request.
 func AckInvoiceStatuses(IDs []string) error {
-	r := strings.NewReader(strings.Join(IDs, IDDelimiter))
+	r := strings.NewReader(strings.Join(IDs, idDelimiter))
 	res, err := http.Post(APIEndpoint, "text/plain", r)
 	if err != nil {
 		return err
